@@ -35,7 +35,11 @@ done
 
 
 DATE=$(date +%Y%m%d_%H%M%S)
-BACKUPS_BASE_DIR="$HOME/backups"
+
+# Set default backups directory if not already configured
+if [ -z "$BACKUPS_BASE_DIR" ]; then
+    BACKUPS_BASE_DIR="$HOME/backups"
+fi
 
 BACKUP_DIR="${BACKUPS_BASE_DIR}/${BACKUP_NAME}"
 LOGS_FILE="${BACKUPS_BASE_DIR}/${BACKUP_NAME}.log"

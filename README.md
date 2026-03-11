@@ -28,6 +28,10 @@ The instance script is where all site-specific configuration lives. It defines t
 
 BACKUP_NAME="myapp"           # Used for S3 prefixes, local folder names, and notifications
 
+# Optional: set where backups are stored locally before sourcing base.sh.
+# Default is $HOME/backups
+# BACKUPS_BASE_DIR="$(dirname "$0")/backups"
+
 dump_database() { ... }       # Should output the database dump to stdout
 backup_files() { ... }        # Should output a .tar.gz stream to stdout
 
@@ -41,6 +45,16 @@ MIN_BACKUP_SIZE=$(numfmt --from=iec 500M)
 
 source /opt/s3-backup/base.sh
 ```
+
+### Local backup storage
+
+By default, backups are stored in `$HOME/backups/{BACKUP_NAME}/` before being uploaded to S3. To store them alongside your instance script instead, uncomment the `BACKUPS_BASE_DIR` line:
+
+```bash
+BACKUPS_BASE_DIR="$(dirname "$0")/backups"
+```
+
+The script keeps only the most recent `.full.tar.gz` file in the local folder; older backups are cleaned up automatically.
 
 ## `dump_database` examples
 
