@@ -13,13 +13,6 @@
 # antes de executar estes script.
 # 
 
-
-
-
-# TODO: auto-delete daily backups 14days+ old (now it's 3 for testing)
-# TODO: act upon dead man's switch
-
-
 REQUIRED_VARS=(
     BACKUP_NAME
     SNS_TOPIC_ARN
