@@ -2,11 +2,20 @@
 
 BACKUP_NAME=""
 
-WORDPRESS_DIR=""
-
 # O comando para fazer dump do banco de dados
 dump_database() {
     # mysqldump ...
+}
+
+# O comando para gerar o arquivo de backup dos arquivos
+backup_files() {
+    local WORDPRESS_DIR=""
+    tar -czf - \
+        --exclude="wp-content/cache/*" \
+        --exclude="wp-content/debug.log" \
+        --exclude="wp-content/uploads/cache/*" \
+        --exclude="*.git" \
+        -C "$WORDPRESS_DIR" .
 }
 
 

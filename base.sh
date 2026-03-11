@@ -22,7 +22,6 @@
 
 REQUIRED_VARS=(
     BACKUP_NAME
-    WORDPRESS_DIR
     SNS_TOPIC_ARN
     S3_BUCKET
     MIN_DB_BACKUP_SIZE
@@ -96,7 +95,7 @@ log_message() {
 send_notification() {
     local status="$1"
     local message="$2"
-    local subject="WordPress Backup $status - $BACKUP_NAME $HOSTNAME ($INSTANCE_ID)"
+    local subject="Backup $status - $BACKUP_NAME $HOSTNAME ($INSTANCE_ID)"
     local formatted_message=$(echo -e "$message")
 
     aws sns publish \
@@ -157,9 +156,14 @@ if ! command -v aws &> /dev/null; then
 fi
 
 
-# Check for dump_database function
+# Check for required functions
 if ! declare -f dump_database > /dev/null 2>&1; then
     log_message "Function 'dump_database' is not defined" "ERROR"
+    exit 1
+fi
+
+if ! declare -f backup_files > /dev/null 2>&1; then
+    log_message "Function 'backup_files' is not defined" "ERROR"
     exit 1
 fi
 
@@ -197,17 +201,11 @@ if [ ! -s "$BACKUP_DIR/$BACKUP_FILE_PREFIX.sql" ]; then
 fi
 
 
-# WordPress files backup
-log_message "Starting WordPress files backup..." "INFO"
-if ! tar -czf $BACKUP_DIR/$BACKUP_FILE_PREFIX.tar.gz \
-    --exclude="wp-content/cache/*" \
-    --exclude="wp-content/debug.log" \
-    --exclude="wp-content/uploads/cache/*" \
-    --exclude="*.git" \
-    -C $WORDPRESS_DIR .; then
-    
-    log_message "WordPress files backup failed" "ERROR"
-    send_notification "FAILED" "WordPress files backup failed\n${ERROR_LOG}"
+# Files backup
+log_message "Starting files backup..." "INFO"
+if ! backup_files > "$BACKUP_DIR/$BACKUP_FILE_PREFIX.tar.gz"; then
+    log_message "Files backup failed" "ERROR"
+    send_notification "FAILED" "Files backup failed\n${ERROR_LOG}"
     exit 1
 fi
 
