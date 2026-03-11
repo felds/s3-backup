@@ -84,7 +84,7 @@ dump_database() {
 
 ## `backup_files` examples
 
-This function should write a gzipped tar stream to stdout (`tar -czf -`). `base.sh` will save it as a `.tar.gz` file.
+This function should write a gzipped tar stream to stdout (`tar -czf -`). `base.sh` will save it as a `.tar.gz` file. For DB-only backups with no files to archive, set `MIN_FILES_BACKUP_SIZE=0` and have the function output nothing.
 
 **WordPress** — excludes cache directories and debug logs that don't need to be backed up:
 ```bash
@@ -106,4 +106,13 @@ backup_files() {
         --exclude=".git" \
         -C /var/www/myapp .
 }
+```
+
+**DB-only backup** — if there are no files to archive:
+```bash
+backup_files() {
+    return 0
+}
+
+MIN_FILES_BACKUP_SIZE=0
 ```
