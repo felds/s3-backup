@@ -4,9 +4,12 @@ BACKUP_NAME=""
 
 WORDPRESS_DIR=""
 
-MYSQL_DATABASE=""
-MYSQL_USERNAME=""
-MYSQL_PASSWORD=""
+# O comando para fazer dump do banco de dados
+dump_database() {
+    # mysqldump ...
+}
+
+
 
 SNS_TOPIC_ARN=""
 S3_BUCKET=""

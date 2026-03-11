@@ -23,9 +23,6 @@
 REQUIRED_VARS=(
     BACKUP_NAME
     WORDPRESS_DIR
-    MYSQL_DATABASE
-    MYSQL_USERNAME
-    MYSQL_PASSWORD
     SNS_TOPIC_ARN
     S3_BUCKET
     MIN_DB_BACKUP_SIZE
@@ -160,6 +157,13 @@ if ! command -v aws &> /dev/null; then
 fi
 
 
+# Check for dump_database function
+if ! declare -f dump_database > /dev/null 2>&1; then
+    log_message "Function 'dump_database' is not defined" "ERROR"
+    exit 1
+fi
+
+
 # Create backup directory (if needed)
 mkdir -p $BACKUP_DIR
 
@@ -176,9 +180,9 @@ check_disk_space || {
 # =====================================================================
 
 
-# MySQL database backup with size check
+# Database backup
 log_message "Starting database backup..." "INFO"
-if ! mariadb-dump --no-tablespaces --user=$MYSQL_USERNAME --password=$MYSQL_PASSWORD $MYSQL_DATABASE > $BACKUP_DIR/$BACKUP_FILE_PREFIX.sql 2>/dev/null ; then
+if ! dump_database > "$BACKUP_DIR/$BACKUP_FILE_PREFIX.sql"; then
     log_message "Database backup failed" "ERROR"
     send_notification "FAILED" "Database backup failed\n${ERROR_LOG}"
     exit 1
