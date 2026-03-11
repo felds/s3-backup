@@ -18,7 +18,6 @@ aws s3api put-bucket-lifecycle-configuration \
 **`lifecycle.json`**
 ```json
 {
-    "TransitionDefaultMinimumObjectSize": "all_storage_classes_128K",
     "Rules": [
         {
             "ID": "Cleanup Dailies",
@@ -55,4 +54,16 @@ aws s3api put-bucket-lifecycle-configuration \
 
 ```sh
 aws s3api get-bucket-lifecycle-configuration --bucket {S3_BUCKET}
+```
+
+## Adding rules to an existing configuration
+
+`put-bucket-lifecycle-configuration` **replaces** the entire configuration — any existing rules not included in the new JSON will be deleted. To safely append rules, fetch the current config first, merge your changes, then re-apply:
+
+```sh
+aws s3api get-bucket-lifecycle-configuration --bucket {S3_BUCKET} > lifecycle.json
+# edit lifecycle.json to add the new rules, then:
+aws s3api put-bucket-lifecycle-configuration \
+  --bucket {S3_BUCKET} \
+  --lifecycle-configuration file://lifecycle.json
 ```
