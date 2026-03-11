@@ -21,4 +21,5 @@ Backs up a database and a directory to S3. Each backup run produces a single `.f
 - [Setup & scheduling](docs/setup.md)
 - [IAM policy](docs/iam-policy.md)
 - [Instance script](docs/instance-script.md)
+- [S3 lifecycle policy](docs/s3-lifecycle.md)
 - [Dead man's switch Lambda](docs/dead-mans-switch.md)
