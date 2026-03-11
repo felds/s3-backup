@@ -1,0 +1,97 @@
+# Instance script
+
+The instance script is where all site-specific configuration lives. It defines two functions — `dump_database` and `backup_files` — that pipe their output to stdout, then sources `base.sh` to run the actual backup logic.
+
+```bash
+#!/usr/bin/env bash
+
+BACKUP_NAME="myapp"           # Used for S3 prefixes, local folder names, and notifications
+
+# Optional: set where backups are stored locally before sourcing base.sh.
+# Default is $HOME/backups
+# BACKUPS_BASE_DIR="$(dirname "$0")/backups"
+
+dump_database() { ... }       # Should output the database dump to stdout
+backup_files() { ... }        # Should output a .tar.gz stream to stdout
+
+SNS_TOPIC_ARN="arn:aws:sns:us-east-1:000000000000:backups"
+S3_BUCKET="my-backups-bucket"
+
+# Minimum expected sizes — used to detect suspiciously small backups
+MIN_DB_BACKUP_SIZE=$(numfmt --from=iec 200M)
+MIN_FILES_BACKUP_SIZE=$(numfmt --from=iec 500M)
+MIN_BACKUP_SIZE=$(numfmt --from=iec 500M)
+
+source /opt/s3-backup/base.sh
+```
+
+## Local backup storage
+
+By default, backups are stored in `$HOME/backups/{BACKUP_NAME}/` before being uploaded to S3. To store them alongside your instance script instead, uncomment the `BACKUPS_BASE_DIR` line:
+
+```bash
+BACKUPS_BASE_DIR="$(dirname "$0")/backups"
+```
+
+The script keeps only the most recent `.full.tar.gz` file in the local folder; older backups are cleaned up automatically.
+
+## `dump_database` examples
+
+This function should write the full database dump to stdout. `base.sh` will redirect it to a `.sql` file.
+
+**MySQL via Docker:**
+```bash
+dump_database() {
+    docker exec my-mysql-container \
+        mysqldump --no-tablespaces -u myuser -pmypassword mydb
+}
+```
+
+**MySQL CLI (local):**
+```bash
+dump_database() {
+    mysqldump --no-tablespaces -u myuser -pmypassword mydb
+}
+```
+
+**SQLite:**
+```bash
+dump_database() {
+    sqlite3 /var/lib/myapp/db.sqlite3 .dump
+}
+```
+
+## `backup_files` examples
+
+This function should write a gzipped tar stream to stdout (`tar -czf -`). `base.sh` will save it as a `.tar.gz` file. For DB-only backups with no files to archive, set `MIN_FILES_BACKUP_SIZE=0` and have the function output nothing.
+
+**WordPress** — excludes cache directories and debug logs that don't need to be backed up:
+```bash
+backup_files() {
+    tar -czf - \
+        --exclude="wp-content/cache/*" \
+        --exclude="wp-content/debug.log" \
+        --exclude="wp-content/uploads/cache/*" \
+        --exclude="*.git" \
+        -C /var/www/html .
+}
+```
+
+**Generic application** — adjust the excludes to match whatever your app generates at runtime:
+```bash
+backup_files() {
+    tar -czf - \
+        --exclude="node_modules" \
+        --exclude=".git" \
+        -C /var/www/myapp .
+}
+```
+
+**DB-only backup** — if there are no files to archive:
+```bash
+backup_files() {
+    return 0
+}
+
+MIN_FILES_BACKUP_SIZE=0
+```
